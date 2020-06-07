@@ -46,13 +46,13 @@ There are a number of options. The advanced options exist for unit testing, but 
 Basic Options:
 
 * `rootDir` - tell the plugin where the package root is located. By default, this is `process.cwd()`.
-* `packCommand` - tell the plugin what shell command to use to generate the pack file. By default, this is `npm pack`. For example, I use [pnpm](https://pnpm.js.org/) instead of `npm`, so my packCommand option looks like `pnpm pack`. The plugin does expect the pack file name to match `npm` naming conventions.
+* `packCommand` - tell the plugin what command to use to generate the pack file. This is not run in a shell, but `execa` is used to parse the command. By default, this is `npm pack`. For example, I use [pnpm](https://pnpm.js.org/) instead of `npm`, so my packCommand option looks like `pnpm pack`. The plugin does expect the pack file name to match `npm` naming conventions.
 
 Advanced options:
 
 * `packageJson` - By default, the plugin reads `package.json` at `rootDir` to figure out the pack file name. If you want something else, provide this option an Object that has `name` and `version` attributes just like `package.json` does.
 * `mover` - Async method that moves the pack file. Signature looks like this: async (fullPackFilePath, fullTargetPackFilePath) => {}. No return value is expected. An `Error` should be thrown on failure. By default the plugin provides a function to move the file.
-* `shellCommand` - An async method that creates the pack file when given the `packCommand` option value. No return value is expected, an `Error` should be thrown on failure. By default, the plugin provides a shell runner.
+* `shellCommand` - An async method that creates the pack file when given the `packCommand` option value. No return value is expected, an `Error` should be thrown on failure. By default, the plugin uses `execa.command` to run `packCommand`.
 
 ## Contributing
 
