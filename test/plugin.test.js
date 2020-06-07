@@ -8,13 +8,14 @@ test('works on real filesystem', async assert => {
   const packFilePath = join(process.cwd(), packFileName)
   await fs.remove(packFilePath)
 
-  let collector
-  const plugin = createPackFile({ packCommand: 'pnpm pack', mover: (src, dst) => { collector = { src, dst } } })
-  const wrapper = {
-    ...plugin,
-    error (e) { collector.error = e }
+  const collector = {}
+  const options = {
+    packCommand: 'pnpm pack',
+    mover: (src, dst) => { collector.src = src; collector.dst = dst }
   }
-  await wrapper.generateBundle({ dir: 'some/test/dir' })
+  const plugin = createPackFile(options)
+  const rollup = { ...plugin, error (e) { collector.error = e } }
+  await rollup.generateBundle({ dir: 'some/test/dir' })
 
   const packFileStats = await fs.stat(join(process.cwd(), packFileName))
   assert.ok(packFileStats.isFile(), 'pack shell command was called')
@@ -23,26 +24,26 @@ test('works on real filesystem', async assert => {
   await fs.remove(packFilePath)
 })
 
+const makeRollup = (options) => {
+  const collector = {}
+  const testOptions = {
+    mover: (src, dst) => { collector.src = src; collector.dst = dst },
+    shellCommand: (cmdString) => { collector.cmdString = cmdString; return [0, null] }
+  }
+  const plugin = createPackFile({ ...testOptions, ...options })
+  const rollup = { ...plugin, error (e) { collector.error = e } }
+  return { rollup, collector }
+}
+
 const fakeScopedPackageJson = {
   name: '@toolbuilder/awesome-pkg',
   version: '12.3.1-rc0'
 }
 
 test('plugin calculates pack file paths for scoped packages', async assert => {
-  const collector = {}
-  const plugin = createPackFile({
-    // default pack command
-    rootDir: '/home/package',
-    mover: (src, dst) => { collector.src = src; collector.dst = dst },
-    packageJson: fakeScopedPackageJson,
-    shellCommand: async (cmdString) => 0 // zero for success
-  })
-  const rollup = {
-    ...plugin,
-    error (error) { console.log(error) }
-  }
-
+  const { rollup, collector } = makeRollup({ rootDir: '/home/package', packageJson: fakeScopedPackageJson })
   await rollup.generateBundle({ dir: 'some/test/dir' })
+
   const packFileName = 'toolbuilder-awesome-pkg-12.3.1-rc0.tgz'
   assert.deepEqual(collector.src, join('/home/package', packFileName), 'Plugin calculates source path correctly')
   assert.deepEqual(collector.dst, join('some/test/dir', packFileName), 'Plugin calculates destination path correctly')
@@ -55,19 +56,9 @@ const fakeUnscopedPackageJson = {
 }
 
 test('plugin calculates pack file paths for unscoped packages', async assert => {
-  const collector = {}
-  const plugin = createPackFile({
-    // default pack command
-    rootDir: '/home/package',
-    mover: (src, dst) => { collector.src = src; collector.dst = dst },
-    packageJson: fakeUnscopedPackageJson,
-    shellCommand: (cmdString) => 0 // zero for success
-  })
-  const rollup = {
-    ...plugin,
-    error (e) { collector.error = e }
-  }
+  const { rollup, collector } = makeRollup({ rootDir: '/home/package', packageJson: fakeUnscopedPackageJson })
   await rollup.generateBundle({ dir: 'some/test/dir' })
+
   const packFileName = 'lodash-20.2.3.tgz'
   assert.deepEqual(collector.src, join('/home/package', packFileName), 'Plugin calculates source path correctly')
   assert.deepEqual(collector.dst, join('some/test/dir', packFileName), 'Plugin calculates destination path correctly')
@@ -75,20 +66,9 @@ test('plugin calculates pack file paths for unscoped packages', async assert => 
 })
 
 test('plugin picks up destination path from outputOptions.file', async assert => {
-  const collector = {}
-  const plugin = createPackFile({
-    // default pack command
-    rootDir: '/home/package',
-    mover: (src, dst) => { collector.src = src; collector.dst = dst },
-    packageJson: fakeUnscopedPackageJson,
-    shellCommand: (cmdString) => 0 // zero for success
-  })
-
-  const rollup = {
-    ...plugin,
-    error (e) { collector.error = e }
-  }
+  const { rollup, collector } = makeRollup({ rootDir: '/home/package', packageJson: fakeUnscopedPackageJson })
   await rollup.generateBundle({ file: 'some/test/dir/test.js' })
+
   const packFileName = 'lodash-20.2.3.tgz'
   assert.deepEqual(collector.src, join('/home/package', packFileName), 'Plugin calculates source path correctly')
   assert.deepEqual(collector.dst, join('some/test/dir', packFileName), 'Plugin calculates destination path correctly')
@@ -96,68 +76,51 @@ test('plugin picks up destination path from outputOptions.file', async assert =>
 })
 
 test('plugin uses provided pack command', async assert => {
-  const collector = {}
-  const plugin = createPackFile({
+  const { rollup, collector } = makeRollup({
     packCommand: 'pnpm pack',
     rootDir: '/home/package',
-    mover: (src, dst) => {},
-    packageJson: fakeUnscopedPackageJson,
-    shellCommand: (cmdString) => { collector.cmdString = cmdString; return 0 }
+    packageJson: fakeUnscopedPackageJson
   })
-  const wrapper = {
-    ...plugin,
-    error (e) { collector.error = e }
-  }
-  await wrapper.generateBundle({ file: 'some/test/dir/test.js' })
+  await rollup.generateBundle({ file: 'some/test/dir/test.js' })
+
   assert.deepEqual(collector.cmdString, 'pnpm pack', 'plugin used provided shell command')
   assert.deepEqual(collector.error, undefined, 'no error was generated')
 })
 
 test('plugin uses default pack command when not provided', async assert => {
-  const collector = {}
-  const plugin = createPackFile({
-    rootDir: '/home/package',
-    mover: (src, dst) => {},
-    packageJson: fakeUnscopedPackageJson,
-    shellCommand: (cmdString) => { collector.cmdString = cmdString; return 0 }
-  })
-  const wrapper = {
-    ...plugin,
-    error (e) { collector.error = e }
-  }
-  await wrapper.generateBundle({ file: 'some/test/dir/test.js' })
+  const { rollup, collector } = makeRollup({ rootDir: '/home/package', packageJson: fakeUnscopedPackageJson })
+  await rollup.generateBundle({ file: 'some/test/dir/test.js' })
+
   assert.deepEqual(collector.cmdString, 'npm pack', 'plugin used default shell command')
   assert.deepEqual(collector.error, undefined, 'no error was generated')
 })
 
 test('plugin calls error method when non-zero return code from shellCommand', async assert => {
-  const collector = {}
-  const plugin = createPackFile({
+  const { rollup, collector } = makeRollup({
+    shellCommand: (cmdString) => [5, null],
     rootDir: '/home/package',
-    mover: (src, dst) => {},
-    packageJson: fakeUnscopedPackageJson,
-    shellCommand: (cmdString) => 5
+    packageJson: fakeUnscopedPackageJson
   })
-  const wrapper = {
-    ...plugin,
-    error (e) { collector.error = e }
-  }
-  await wrapper.generateBundle({ file: 'some/test/dir/test.js' })
+  await rollup.generateBundle({ file: 'some/test/dir/test.js' })
   assert.deepEqual(collector.error, 'npm pack returned code: 5', 'correct error was generated')
 })
 
-test('plugin calls error method when shellCommand rejects', async assert => {
-  const collector = {}
-  const plugin = createPackFile({
+test('plugin calls error method when shellCommand returns a signal', async assert => {
+  const { rollup, collector } = makeRollup({
+    shellCommand: (cmdString) => [null, 'SIGPIPE'],
     rootDir: '/home/package',
-    mover: (src, dst) => {},
-    packageJson: fakeUnscopedPackageJson,
-    shellCommand: (cmdString) => Promise.reject('cannot find npm') // eslint-disable-line
+    packageJson: fakeUnscopedPackageJson
   })
-  const wrapper = {
-    ...plugin,
-    error (e) { collector.error = e }
-  }
-  await wrapper.generateBundle({ file: 'some/test/dir/test.js' })
+  await rollup.generateBundle({ file: 'some/test/dir/test.js' })
+  assert.deepEqual(collector.error, 'npm pack exited on signal SIGPIPE', 'correct error was generated')
+})
+
+test('plugin calls error method when shellCommand rejects', async assert => {
+  const { rollup, collector } = makeRollup({
+    shellCommand: (cmdString) => Promise.reject('cannot find npm'), // eslint-disable-line
+    rootDir: '/home/package',
+    packageJson: fakeUnscopedPackageJson
+  })
+  await rollup.generateBundle({ file: 'some/test/dir/test.js' })
   assert.deepEqual(collector.error, 'cannot find npm', 'correct error was generated')
 })

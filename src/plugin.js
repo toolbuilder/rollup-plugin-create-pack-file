@@ -7,7 +7,7 @@ import spawn from 'cross-spawn'
 const shellCommand = (cmdString) => {
   return new Promise((resolve, reject) => {
     const child = spawn(cmdString, [], { shell: true, stdio: 'inherit' })
-    child.on('exit', (code) => resolve(code))
+    child.on('exit', (code, signal) => resolve([code, signal]))
     child.on('error', (error) => reject(error))
   })
 }
@@ -41,8 +41,9 @@ export default (userOptions = {}) => {
     // Create pack file, and move it to the output directory
     async generateBundle (outputOptions) {
       try {
-        const code = await options.shellCommand(options.packCommand)
-        if (code !== 0) this.error(`${options.packCommand} returned code: ${code}`)
+        const [code, signal] = await options.shellCommand(options.packCommand)
+        if (code && code !== 0) this.error(`${options.packCommand} returned code: ${code}`)
+        if (signal) this.error(`${options.packCommand} exited on signal ${signal}`)
         const packageJson = options.packageJson || await readPackageJson(options.rootDir)
         const packfile = packFileName(packageJson)
         const outputDir = outputOptions.dir || dirname(outputOptions.file)
