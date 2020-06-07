@@ -1,19 +1,7 @@
 import { dirname, join } from 'path'
 import pkgDir from 'pkg-dir'
 import fs from 'fs-extra'
-import spawn from 'cross-spawn'
-
-// Run a shell command, link stdio to current process
-const shellCommand = async (cmdString) => {
-  return new Promise((resolve, reject) => {
-    const child = spawn(cmdString, [], { shell: true, stdio: 'inherit' })
-    child.on('exit', (code, signal) => {
-      (code != null && code === 0) ? resolve(code) : reject(new Error(`${cmdString} exited with non-zero exit code`))
-      if (signal != null) reject(new Error(`${cmdString} exited because of ${signal}`))
-    })
-    child.on('error', (error) => reject(error))
-  })
-}
+import execa from 'execa'
 
 const readPackageJson = async (startFrom = process.cwd()) => {
   const path = await pkgDir(startFrom)
@@ -28,7 +16,7 @@ export default (userOptions = {}) => {
     packCommand: 'npm pack',
     packageJson: undefined, // permit testing without filesystem access
     mover, // permit testing without filesystem access
-    shellCommand, // permit testing without calling command
+    shellCommand: (cmdString) => execa.command(cmdString, { stdio: 'inherit' }), // permit testing without calling command
     ...userOptions
   }
 

@@ -1,7 +1,7 @@
 {
   "name": "@toolbuilder/rollup-plugin-create-pack-file",
   "description": "create a pack file and move it somewhere else for testing",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "keywords": [
     "rollup",
     "plugin",
@@ -23,8 +23,8 @@
     "extends": "@toolbuilder/eslint-config"
   },
   "dependencies": {
-    "cross-spawn": "^7.0.3",
     "esm": "^3.2.25",
+    "execa": "^4.0.2",
     "fs-extra": "^9.0.1",
     "pkg-dir": "^4.2.0"
   },
