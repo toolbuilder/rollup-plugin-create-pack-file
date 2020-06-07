@@ -51,8 +51,8 @@ Basic Options:
 Advanced options:
 
 * `packageJson` - By default, the plugin reads `package.json` at `rootDir` to figure out the pack file name. If you want something else, provide this option an Object that has `name` and `version` attributes just like `package.json` does.
-* `mover` - provide a function that moves the pack file. Signature looks like this: async (fullPackFilePath, fullTargetPackFilePath) => {}. No return value is expected. By default the plugin provides a function that moves the pack file.
-* `shellCommand` - An async method that creates the pack file when given the `packCommand` option value. On success, it should return zero. Any other value, or an exception, is considered a failure. By default, a function is provided that writes any terminal output to the current terminal.
+* `mover` - Async method that moves the pack file. Signature looks like this: async (fullPackFilePath, fullTargetPackFilePath) => {}. No return value is expected. An `Error` should be thrown on failure. By default the plugin provides a function to move the file.
+* `shellCommand` - An async method that creates the pack file when given the `packCommand` option value. No return value is expected, an `Error` should be thrown on failure. By default, the plugin provides a shell runner.
 
 ## Contributing
 

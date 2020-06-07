@@ -4,10 +4,13 @@ import fs from 'fs-extra'
 import spawn from 'cross-spawn'
 
 // Run a shell command, link stdio to current process
-const shellCommand = (cmdString) => {
+const shellCommand = async (cmdString) => {
   return new Promise((resolve, reject) => {
     const child = spawn(cmdString, [], { shell: true, stdio: 'inherit' })
-    child.on('exit', (code, signal) => resolve([code, signal]))
+    child.on('exit', (code, signal) => {
+      (code != null && code === 0) ? resolve(code) : reject(new Error(`${cmdString} exited with non-zero exit code`))
+      if (signal != null) reject(new Error(`${cmdString} exited because of ${signal}`))
+    })
     child.on('error', (error) => reject(error))
   })
 }
@@ -41,9 +44,7 @@ export default (userOptions = {}) => {
     // Create pack file, and move it to the output directory
     async generateBundle (outputOptions) {
       try {
-        const [code, signal] = await options.shellCommand(options.packCommand)
-        if (code && code !== 0) this.error(`${options.packCommand} returned code: ${code}`)
-        if (signal) this.error(`${options.packCommand} exited on signal ${signal}`)
+        await options.shellCommand(options.packCommand)
         const packageJson = options.packageJson || await readPackageJson(options.rootDir)
         const packfile = packFileName(packageJson)
         const outputDir = outputOptions.dir || dirname(outputOptions.file)

@@ -3,32 +3,11 @@ import { test } from 'zora'
 import { join } from 'path'
 import fs from 'fs-extra'
 
-test('works on real filesystem', async assert => {
-  const packFileName = 'toolbuilder-rollup-plugin-create-pack-file-0.1.0.tgz'
-  const packFilePath = join(process.cwd(), packFileName)
-  await fs.remove(packFilePath)
-
-  const collector = {}
-  const options = {
-    packCommand: 'pnpm pack',
-    mover: (src, dst) => { collector.src = src; collector.dst = dst }
-  }
-  const plugin = createPackFile(options)
-  const rollup = { ...plugin, error (e) { collector.error = e } }
-  await rollup.generateBundle({ dir: 'some/test/dir' })
-
-  const packFileStats = await fs.stat(join(process.cwd(), packFileName))
-  assert.ok(packFileStats.isFile(), 'pack shell command was called')
-  assert.deepEqual(collector.src, join(process.cwd(), packFileName), 'package.json read correctly')
-  assert.deepEqual(collector.dst, join('some/test/dir', packFileName), 'read outputOptions to get dir')
-  await fs.remove(packFilePath)
-})
-
 const makeRollup = (options) => {
   const collector = {}
   const testOptions = {
     mover: (src, dst) => { collector.src = src; collector.dst = dst },
-    shellCommand: (cmdString) => { collector.cmdString = cmdString; return [0, null] }
+    shellCommand: (cmdString) => { collector.cmdString = cmdString; return 0 }
   }
   const plugin = createPackFile({ ...testOptions, ...options })
   const rollup = { ...plugin, error (e) { collector.error = e } }
@@ -95,32 +74,43 @@ test('plugin uses default pack command when not provided', async assert => {
   assert.deepEqual(collector.error, undefined, 'no error was generated')
 })
 
-test('plugin calls error method when non-zero return code from shellCommand', async assert => {
+test('plugin calls passes exception from shellCommand to Rollup', async assert => {
   const { rollup, collector } = makeRollup({
-    shellCommand: (cmdString) => [5, null],
+    shellCommand: (cmdString) => { throw new Error('some error') },
     rootDir: '/home/package',
     packageJson: fakeUnscopedPackageJson
   })
   await rollup.generateBundle({ file: 'some/test/dir/test.js' })
-  assert.deepEqual(collector.error, 'npm pack returned code: 5', 'correct error was generated')
+  assert.ok(collector.error instanceof Error, 'error was passed to Rollup')
 })
 
-test('plugin calls error method when shellCommand returns a signal', async assert => {
+test('plugin passes exception from mover to Rollup', async assert => {
   const { rollup, collector } = makeRollup({
-    shellCommand: (cmdString) => [null, 'SIGPIPE'],
+    mover: (src, dst) => { throw new Error('some mover error') },
     rootDir: '/home/package',
     packageJson: fakeUnscopedPackageJson
   })
   await rollup.generateBundle({ file: 'some/test/dir/test.js' })
-  assert.deepEqual(collector.error, 'npm pack exited on signal SIGPIPE', 'correct error was generated')
+  assert.ok(collector.error instanceof Error, 'error was passed to Rollup')
 })
 
-test('plugin calls error method when shellCommand rejects', async assert => {
-  const { rollup, collector } = makeRollup({
-    shellCommand: (cmdString) => Promise.reject('cannot find npm'), // eslint-disable-line
-    rootDir: '/home/package',
-    packageJson: fakeUnscopedPackageJson
-  })
-  await rollup.generateBundle({ file: 'some/test/dir/test.js' })
-  assert.deepEqual(collector.error, 'cannot find npm', 'correct error was generated')
+test('works on real filesystem', async assert => {
+  const packFileName = 'toolbuilder-rollup-plugin-create-pack-file-0.1.0.tgz'
+  const packFilePath = join(process.cwd(), packFileName)
+  await fs.remove(packFilePath)
+
+  const collector = {}
+  const options = {
+    packCommand: 'pnpm pack',
+    mover: (src, dst) => { collector.src = src; collector.dst = dst }
+  }
+  const plugin = createPackFile(options)
+  const rollup = { ...plugin, error (e) { console.log(e); collector.error = e } }
+  await rollup.generateBundle({ dir: 'some/test/dir' })
+
+  const packFileStats = await fs.stat(join(process.cwd(), packFileName))
+  assert.ok(packFileStats.isFile(), 'pack shell command was called')
+  assert.deepEqual(collector.src, join(process.cwd(), packFileName), 'package.json read correctly')
+  assert.deepEqual(collector.dst, join('some/test/dir', packFileName), 'read outputOptions to get dir')
+  await fs.remove(packFilePath)
 })
