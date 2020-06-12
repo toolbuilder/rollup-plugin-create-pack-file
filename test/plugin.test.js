@@ -94,8 +94,14 @@ test('plugin passes exception from mover to Rollup', async assert => {
   assert.ok(collector.error instanceof Error, 'error was passed to Rollup')
 })
 
+const calculatePackFileName = async () => {
+  const packageJson = await fs.readJSON(join(process.cwd(), 'package.json'))
+  // plugin builds entire name, want unit test to do it differently
+  return `toolbuilder-rollup-plugin-create-pack-file-${packageJson.version}.tgz`
+}
+
 test('works on real filesystem', async assert => {
-  const packFileName = 'toolbuilder-rollup-plugin-create-pack-file-0.1.0.tgz'
+  const packFileName = await calculatePackFileName()
   const packFilePath = join(process.cwd(), packFileName)
   await fs.remove(packFilePath)
 
