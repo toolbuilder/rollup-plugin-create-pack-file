@@ -1,13 +1,21 @@
 {
   "name": "@toolbuilder/rollup-plugin-create-pack-file",
-  "description": "create a pack file and move it somewhere else for testing",
   "version": "0.1.1",
+  "description": "Create a pack file and move it somewhere else for testing.",
   "keywords": [
     "rollup",
     "plugin",
     "rollup-plugin",
     "pack"
   ],
+  "homepage": "https://github.com/toolbuilder/rollup-plugin-create-pack-file#readme",
+  "bugs": {
+    "url": "https://github.com/toolbuilder/rollup-plugin-create-pack-file/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/toolbuilder/rollup-plugin-create-pack-file.git"
+  },
   "license": "MIT",
   "main": "index.js",
   "module": "src/index.js",
@@ -15,9 +23,15 @@
     "src"
   ],
   "scripts": {
-    "build": "npm-run-all --serial test lint",
-    "lint": "eslint src test",
-    "test": "tape -r esm \"test/*.test.js\""
+    "check": "run-s check:*",
+    "check:packagejson": "npmPkgJsonLint .",
+    "check:packfile": "rollup --config rollup.test.config.js",
+    "check:src": "eslint src test",
+    "check:test": "run-s test",
+    "check:uncommitted": "uncommitted",
+    "prerelease": "run-s check",
+    "release": "standard-version",
+    "test": "tape -r esm \"test/*test.js\""
   },
   "eslintConfig": {
     "extends": "@toolbuilder/eslint-config"
@@ -30,9 +44,21 @@
   },
   "devDependencies": {
     "@toolbuilder/eslint-config": ">=0.1.2",
+    "@toolbuilder/package-json-lint-config": "^0.1.0",
+    "@toolbuilder/rollup-plugin-commands": "^0.1.0",
     "eslint": ">=6.8.0",
+    "npm-package-json-lint": "^5.1.0",
     "npm-run-all": "^4.1.5",
+    "rollup": "^2.18.1",
+    "rollup-plugin-create-test-package-json": "^0.1.1",
+    "rollup-plugin-multi-input": "^1.1.1",
+    "rollup-plugin-relative-to-package": "^0.1.2",
+    "standard-version": "^8.0.0",
     "tape": "^5.0.0",
+    "uncommitted": "^1.0.0",
     "zora": "^3.1.8"
+  },
+  "npmpackagejsonlint": {
+    "extends": "@toolbuilder/package-json-lint-config"
   }
 }
