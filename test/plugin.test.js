@@ -96,8 +96,8 @@ test('plugin passes exception from mover to Rollup', async assert => {
 
 const calculatePackFileName = async () => {
   const packageJson = await fs.readJSON(join(process.cwd(), 'package.json'))
-  // plugin builds entire name, want unit test to do it differently
-  return `toolbuilder-rollup-plugin-create-pack-file-${packageJson.version}.tgz`
+  const hyphenName = packageJson.name.replace('@', '').replace('/', '-')
+  return `${hyphenName}-${packageJson.version}.tgz`
 }
 
 test('works on real filesystem', async assert => {
