@@ -27,12 +27,16 @@ import createPackFile from '@toolbuilder/rollup-plugin-create-pack-file'
 export default {
   input: 'entry-point.js',
   output: {
-    // You can use `file` instead, the plugin will use path.dirname to get the directory path
-    dir: 'where/the/pack/file/should/go'
+    // By default the plugin will use output.dir or dirname(output.file) for the output directory
+    file: 'somewhere/es/entry-point.js'
     format: 'es'
   },
   plugins: [
-    createPackFile() // typically, you won't need any options
+    createPackFile({
+      // if you want the packfile in another place than dirname(output.file) or output.dir,
+      // specify that directory here.
+      outputDir: 'somewhere'
+    })
   ]
 }
 ```
@@ -46,7 +50,8 @@ There are a number of options. The advanced options exist for unit testing, but 
 Basic Options:
 
 * `rootDir` - tell the plugin where the package root is located. By default, this is `process.cwd()`.
-* `packCommand` - tell the plugin what command to use to generate the pack file. This is not run in a shell, but `execa` is used to parse the command. By default, this is `npm pack`. For example, I use [pnpm](https://pnpm.js.org/) instead of `npm`, so my packCommand option looks like `pnpm pack`. The plugin does expect the pack file name to match `npm` naming conventions.
+* `outputDir` - tell the plugin the output directory for the pack file. By default the plugin uses Rollup options `output.dir` or `dirname(output.file)` - whichever was specified.
+* `packCommand` - tell the plugin what command to use to generate the pack file. This is not run in a shell, but `execa` is used to parse the command. By default, this is `npm pack`. For example, I use [pnpm](https://pnpm.js.org/) instead of `npm`, so my packCommand option looks like `pnpm pack`. The plugin expects the pack file name to match `npm` naming conventions.
 
 Advanced options:
 

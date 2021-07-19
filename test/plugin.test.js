@@ -54,6 +54,17 @@ test('plugin picks up destination path from outputOptions.file', async assert =>
   assert.deepEqual(collector.error, undefined, 'no error was generated')
 })
 
+test('plugin uses outputDir option when provided', async assert => {
+  const outputDir = '/some/output/dir'
+  const { rollup, collector } = makeRollup({ rootDir: '/home/package', outputDir, packageJson: fakeUnscopedPackageJson })
+  await rollup.generateBundle({ file: 'some/test/dir/test.js' })
+
+  const packFileName = 'lodash-20.2.3.tgz'
+  assert.deepEqual(collector.src, join('/home/package', packFileName), 'Plugin calculates source path correctly')
+  assert.deepEqual(collector.dst, join(outputDir, packFileName), 'Plugin calculates destination path correctly')
+  assert.deepEqual(collector.error, undefined, 'no error was generated')
+})
+
 test('plugin uses provided pack command', async assert => {
   const { rollup, collector } = makeRollup({
     packCommand: 'pnpm pack',

@@ -12,6 +12,7 @@ const mover = (src, dst) => fs.move(src, dst, { overwrite: true })
 
 export default (userOptions = {}) => {
   const options = {
+    outputDir: undefined, // where to put pack file
     rootDir: process.cwd(),
     packCommand: 'npm pack',
     packageJson: undefined, // permit testing without filesystem access
@@ -35,7 +36,7 @@ export default (userOptions = {}) => {
         await options.shellCommand(options.packCommand)
         const packageJson = options.packageJson || await readPackageJson(options.rootDir)
         const packfile = packFileName(packageJson)
-        const outputDir = outputOptions.dir || dirname(outputOptions.file)
+        const outputDir = options.outputDir || outputOptions.dir || dirname(outputOptions.file)
         await options.mover(join(options.rootDir, packfile), join(outputDir, packfile))
       } catch (error) {
         this.error(error)
