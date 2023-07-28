@@ -1,6 +1,5 @@
 import createTestPackageJson from 'rollup-plugin-create-test-package-json'
 import multiInput from 'rollup-plugin-multi-input'
-import relativeToPackage from 'rollup-plugin-relative-to-package'
 import createPackFile from './src/plugin'
 import runCommands, { shellCommand } from '@toolbuilder/rollup-plugin-commands'
 import { tmpdir } from 'os'
@@ -24,17 +23,15 @@ export default [
     input: ['test/**/*test.js'],
     preserveModules: true, // Generate one unit test for each input unit test
     output: {
-      format: 'es',
+      format: 'es', // the generated project is type:commonjs using esm to run es unit tests
       dir: testPackageDir
     },
     plugins: [
       multiInput(), // Handles the input glob above
-      relativeToPackage({ // This package converts relative imports to package imports
-        modulePaths: 'src/**/*.js'
-      }),
       createTestPackageJson({ // Creates package.json for testPackageDir
         // Provide information that plugin can't pick up for itself
         testPackageJson: {
+          // if you want the test project to be type:module add that and exports here
           scripts: {
             test: 'tape -r esm test/**/*test.js | tap-nirvana'
           },

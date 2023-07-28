@@ -2,16 +2,7 @@
 
 This [Rollup](https://rollupjs.org/guide/en/) plugin creates a pack file from your package, and moves it somewhere else as part of testing your package.
 
-I test a package by using `Rollup` to:
-
-* convert units tests so that they use package instead of relative imports (e.g. `../src/index` to `iterablefu`)
-  * [rollup-plugin-multi-input](https://github.com/alfredosalzillo/rollup-plugin-multi-input)
-  * [rollup-plugin-relative-to-package](https://github.com/toolbuilder/rollup-plugin-relative-to-package)
-* build a test package around those tests
-  * [rollup-plugin-create-test-package-json](https://github.com/toolbuilder/rollup-plugin-create-test-package-json)
-  * this package
-* and run the tests
-  * [rollup-plugin-command](https://github.com/Vehmloewff/rollup-plugin-command)
+This plugin is used by [@toolbuilder/rollup-plugin-test-tools](https://github.com/toolbuilder/rollup-plugin-test-tools), which tests your [pack file](https://docs.npmjs.com/cli/v6/commands/npm-pack) in temporary ES, CommonJS, and Electron projects.
 
 ## Installation
 

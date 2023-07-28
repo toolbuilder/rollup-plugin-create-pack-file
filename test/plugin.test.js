@@ -1,4 +1,4 @@
-import createPackFile from '../src/plugin'
+import createPackFile from '@toolbuilder/rollup-plugin-create-pack-file'
 import { test } from 'zora'
 import { join } from 'path'
 import fs from 'fs-extra'
