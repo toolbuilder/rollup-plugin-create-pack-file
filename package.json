@@ -1,6 +1,6 @@
 {
   "name": "@toolbuilder/rollup-plugin-create-pack-file",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Rollup plugin to create a pack file and move it somewhere else for testing.",
   "keywords": [
     "rollup",
