@@ -1,9 +1,13 @@
 import createTestPackageJson from 'rollup-plugin-create-test-package-json'
-import multiInput from 'rollup-plugin-multi-input'
-import createPackFile from './src/plugin'
+import multiInputPkg from 'rollup-plugin-multi-input'
+import createPackFile from '@toolbuilder/rollup-plugin-create-pack-file'
 import runCommands, { shellCommand } from '@toolbuilder/rollup-plugin-commands'
 import { tmpdir } from 'os'
 import { join } from 'path'
+
+// multiInput is CJS module transpiled from TypeScript. Default is not coming in properly.
+const isFunction = object => object && typeof (object) === 'function'
+const multiInput = isFunction(multiInputPkg) ? multiInputPkg : multiInputPkg.default
 
 /*
   This Rollup configuration is used by the 'check:packfile' script to validate that the
@@ -21,10 +25,10 @@ export default [
   {
     // process all unit tests, and specify output in 'test' directory of testPackageDir
     input: ['test/**/*test.js'],
-    preserveModules: true, // Generate one unit test for each input unit test
     output: {
       format: 'es', // the generated project is type:commonjs using esm to run es unit tests
-      dir: testPackageDir
+      dir: testPackageDir,
+      preserveModules: true // Generate one unit test for each input unit test
     },
     plugins: [
       multiInput(), // Handles the input glob above
