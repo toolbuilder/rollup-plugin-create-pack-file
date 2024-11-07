@@ -7,6 +7,7 @@
 export default [
   {
     input: 'src/plugin.js',
+    external: (id) => !(id.startsWith('.') || id.startsWith('/')),
     output: {
       dir: 'cjs',
       format: 'cjs',
